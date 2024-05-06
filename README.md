@@ -12,6 +12,7 @@ The main files in the project include:
 
 - **Main Haskell Server**: `Main.hs` contains the main logic for the Haskell WebSocket server.
 - **WebSocket Logic**: `HViewWebSockets.hs` handles WebSocket connections, message processing, and JSON serialization.
+- **Example App**: `FloatExample.hs` Example app showing basic functionality.
 - **JavaScript Client**: `static/js/hview.js` contains the JavaScript client code that connects to the WebSocket server and updates HTML elements.
 - **Mustache Templates**: Mustache templates for generating HTML are used in the Haskell server. They can be found in the Haskell code.
 
@@ -31,6 +32,6 @@ stack build
 stack exec hview
 ```
 
-This will start the server, which will listen for WebSocket connections on `ws://127.0.0.1:3001` and serves an example app on `http://localhost:3000/page`.
+This will start the server, which will listen for WebSocket connections on `ws://127.0.0.1:3001` and serves the FloatExample app on `http://localhost:3000/page`.
 
 
