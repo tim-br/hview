@@ -3,12 +3,13 @@
 import Web.Scotty
 import Data.Text as T
 import Data.Text.Lazy as TL
+import Control.Monad.IO.Class (liftIO)  -- Import liftIO
 
 import Text.Mustache
 import Text.Mustache.Compile
-import HViewWebSockets (runWebSocketServer, render)
+import HViewWebSockets (runWebSocketServer)
 -- import HViewInstance (Counter(..), handleMessage)
-import FloatExample (Instance2(..), handleMessage)
+import FloatExample (Instance2(..), handleMessage, render)
 --import HViewInstance2 (Instance2(..), handleMessage)
 import Data.Aeson ((.=), object)
 import Control.Concurrent (forkIO)
@@ -28,26 +29,31 @@ import Control.Concurrent (forkIO)
 --       , "counter2" .= counter2  ]
 
 -- Using Instance2 from HViewInstanc2
-mainPage :: String -> TL.Text
+mainPage :: String -> IO TL.Text
 mainPage name = do
-  let counter1 = render "myid" (Instance2 "float")
-  -- let counter2 = render "myid-32" $ Instance2 32
-  -- let counter1 = render "myid" $ Counter 0
-  -- let counter2 = render "myid-32" $ Counter 32
-
+  -- Execute the render function to get the actual String value from the IO action
+  counter1 <- render "myid" "float"
+  
+  -- You might need to handle more instances similar to the commented out counter2 here
+  -- counter2 <- render "myid-32" $ Instance2 32
+  
+  -- Compile the template
   let compiledTemplate = compileMustacheText "page" "<html><head><link rel=\"stylesheet\" href=\"/css/styles.css\"><script src='/js/hview.js'></script></head><body><div>Test, {{name}}!</div> {{{counter1}}}  </body></html>"
   case compiledTemplate of
-    Left bundle ->  "error"
-    Right template -> renderMustache template $ object
-      [ "name"   .= (name :: String)
-      , "counter1" .= counter1
-       ]
+    Left bundle -> return "error"
+    Right template -> do
+      -- Now use counter1 as a String in the JSON object
+      let renderedPage = renderMustache template $ object
+            [ "name" .= name
+            , "counter1" .= counter1
+            ]
+      return renderedPage
 
 scottyServer = scotty 3000 $ do
 
   get "/page" $ do
-    html (mainPage "")
-
+    pageContent <- liftIO (mainPage "")
+    html pageContent            
   get "/:word" $ do
     beam <- captureParam "word"
     html $ mconcat ["<h1>Scotty, ", beam, " me up!</h1>"]

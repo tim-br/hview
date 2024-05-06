@@ -63,7 +63,6 @@ document.addEventListener("DOMContentLoaded", function() {
           // Find the element within this parent that has the 'h-value' attribute and get its integer value
           const hValueElement = parent.querySelector('[h-value]');
           const hValue = hValueElement ? parseInt(hValueElement.textContent) : 0;
-    
           // Find all children within this parent that have 'h-click' attribute
           let children = Array.from(parent.querySelectorAll('[h-click]')); // Get all children with 'h-click'
           if (parent.hasAttribute('h-click')) {
@@ -71,7 +70,7 @@ document.addEventListener("DOMContentLoaded", function() {
           }          
           console.log("children ", children)
           children.forEach(child => {
-              console.log("here")
+              console.log("here in children")
               // Extract the 'h-click' attribute value
               const hClickValue = child.getAttribute('h-click');
     
