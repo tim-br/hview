@@ -1,28 +1,34 @@
 {-# LANGUAGE DeriveGeneric, OverloadedStrings #-}
+-- {-# LANGUAGE RankNTypes #-}
+-- {-# LANGUAGE ExistentialQuantification #-}
+
 
 module HViewWebSockets (
     runWebSocketServer,
-    buttonT,
     Renderer(..),
     sendJsonMessage,
-    SendMessage(..)
+    SendMessage(..),
+    Message(..),
+    Body(..)
 ) where
 
 import qualified Network.WebSockets as WS
-import Data.Text
+import Data.Text ()
 import Control.Monad (forever)
 import Data.Aeson (FromJSON, decode)
 import qualified Data.Text.Lazy.Encoding as TextEncoding
 import GHC.Generics (Generic)
 import Data.Text.Lazy as TL
-import Data.Aeson (ToJSON, toJSON, (.=), object, encode)
+import Data.Aeson (ToJSON, parseJSON, Value(..), toJSON, (.=), object, encode)
 import Text.Mustache
 import Text.Mustache.Compile
 import qualified Data.ByteString.Lazy as BSL
+import Data.Aeson.Types (withObject, Parser)
+import Data.Aeson ((.:))
 
 -- Define a typeclass for rendering
 class Renderer a where
-    render :: a -> TL.Text
+    render :: String -> a -> TL.Text
 
 -- Define a type for template data
 -- data TemplateData = TemplateData {
@@ -37,26 +43,38 @@ class Renderer a where
 --     render (TemplateData hId count) = buttonT hId count
 
 -- Modify buttonT to accept a value of typeclass Renderer
-buttonT :: Renderer a => a -> TL.Text
-buttonT = render
+-- buttonT :: Renderer a => a -> TL.Text
+-- buttonT = render
 
 -- Overload buttonT to accept custom HTML
 -- buttonT :: TL.Text -> TL.Text
 -- buttonT customHTML = customHTML
 
+data Body = Body {
+    dispatch :: String,
+    payload :: Int
+} deriving (Show, Generic)
+
 data Message = Message {
-    h_id :: String,
-    msg :: String,
-    value :: Int
-} deriving (Generic, Show)
+    hID :: String,
+    body :: Body
+} deriving (Show, Generic)
+
+instance FromJSON Body
+instance FromJSON Message
 
 data SendMessage = SendMessage
   { hId :: String
   , html :: String
   } deriving (Show, Generic)
 
-instance FromJSON Message
+-- instance (FromJSON a) => FromJSON (Message a)
+
+--instance FromJSON (Message a)
+--instance (FromJSON a) => FromJSON (Message a)
+
 instance FromJSON SendMessage
+
 
 instance ToJSON SendMessage where
     toJSON (SendMessage hId html) = object
@@ -78,7 +96,9 @@ sendJsonMessage conn msg =
 --                 _           -> buttonT hId 99
 --   sendJsonMessage conn (SendMessage { hId = hId, html = TL.unpack html })
 
-type MessageHandler = WS.Connection -> String -> String -> Int -> IO ()
+-- type MessageHandler = WS.Connection -> String -> String -> Int -> IO ()
+
+type MessageHandler =  WS.Connection -> Message -> IO ()
 
 wsApp :: MessageHandler -> WS.ServerApp
 wsApp handleMessage pending_conn = do
@@ -88,7 +108,7 @@ wsApp handleMessage pending_conn = do
     msg <- WS.receiveData conn
     --WS.sendTextData conn (msg :: Text)  -- Echo back the received message
     case decode msg :: Maybe Message of
-      Just (Message hId message value) -> handleMessage conn hId message value
+      Just parsedMsg -> handleMessage conn parsedMsg
       Nothing -> putStrLn "Error parsing JSON"
 
 -- Run the WebSocket server
