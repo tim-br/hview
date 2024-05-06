@@ -39,6 +39,18 @@ createMainDiv value id = do
             ]
       return $ TL.unpack rendered  -- Convert Text back to String
 
+counterDiv :: String -> String -> IO String
+counterDiv hId value = do
+  let templateStr = "<div h-id={{id}}><h1>Counter: <div h-value>{{count}}</div></h1><button h-click=\"increment\">Increment</button><button h-click=\"decrement\">Decrement</button></div>"
+      compiledTemplate = compileMustacheText "mainDiv" templateStr
+  case compiledTemplate of
+    Left _ -> return "Error compiling main div template"
+    Right template -> do
+      let rendered = renderMustache template $ object
+            [ "id"    .= hId
+            , "count" .= TL.pack value  -- Convert String to Text
+            ]
+      return $ TL.unpack rendered 
 
 -- Function to create the bottom div using Mustache
 createBottomDiv :: String -> IO String
@@ -72,7 +84,8 @@ render hid value = do
   let newValue = buttonStr ++ unsetButtonStr
   mainDivContent <- createMainDiv newValue hid
   bottomDivContent <- createBottomDiv value
-  let templateStr = "{{{mainDiv}}}{{{bottomDiv}}}"
+  counterDiv <- counterDiv "fixx" "0"
+  let templateStr = "{{{mainDiv}}}{{{counterDiv}}}{{{bottomDiv}}}"
       buttonStr = "<button h-click=\"set-float\">Show Float</button>"
       unsetButtonStr = "<button h-click=\"unset-float\">Hide Float</button>"
       compiledTemplate = compileMustacheText "page" templateStr
@@ -83,15 +96,23 @@ render hid value = do
             [ "mainDiv"   .= T.pack mainDivContent  -- Convert String to Text
             , "button"    .= T.pack buttonStr  -- Convert String to Text
             , "unsetButton"    .= T.pack unsetButtonStr  -- Convert String to Text
+            , "counterDiv" .= T.pack counterDiv
             , "bottomDiv" .= T.pack bottomDivContent  -- Convert String to Text
             ]
       return $ TL.unpack rendered  -- Convert Text back to String
+
+adjustCounter :: String -> Int -> String
+adjustCounter "increment" value = show (value + 1)
+adjustCounter "decrement" value = show (value - 1)
+adjustCounter _ value = show (value)
 
 foo :: Message -> IO String
 foo message =
     case dispatch message of
         "set-float" -> FloatExample.createBottomDiv "float"
         "unset-float" -> FloatExample.createBottomDiv "none"
+        "increment" -> counterDiv "fixx" $ show ((read (payload message) :: Int) + 1)
+        "decrement" -> counterDiv "fixx" $ show ((read (payload message) :: Int) - 1)
         _ -> FloatExample.render "myid" "none"
 
 -- handleMessage :: WS.Connection -> Message -> (Message -> IO String) -> IO ()

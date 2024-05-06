@@ -57,7 +57,8 @@ class Renderer a where
 data Message = Message {
     hID :: String,
     targetID :: Maybe String,
-    dispatch :: String
+    dispatch :: String,
+    payload :: String
 } deriving (Show, Generic)
 
 instance FromJSON Message
@@ -124,7 +125,9 @@ handleMessage conn message generateHTML = do
             sendJsonMessage conn (SendMessage { hId = targetID, html = html })
         Nothing -> do 
           -- In case of Nothing, send an empty string
-          putStrLn "do nothing"
+          html <- generateHTML message
+          sendJsonMessage conn (SendMessage { hId = hID message, html = html })
+
           --sendJsonMessage conn (SendMessage { hId = hID message, html = "" })
 
 

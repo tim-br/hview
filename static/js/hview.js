@@ -77,7 +77,7 @@ document.addEventListener("DOMContentLoaded", function() {
               // Add click event listener to each child element
               child.addEventListener('click', function() {
                   // Send the structured data to the WebSocket server
-                  const dataToSend = { hID: hIdValue, targetID: targetIdValue, dispatch: hClickValue, payload: hValue };
+                  const dataToSend = { hID: hIdValue, targetID: targetIdValue, dispatch: hClickValue, payload: hValue.toString() };
                   socket.send(JSON.stringify(dataToSend));
                   console.log('Data sent to server:', dataToSend);
               });
