@@ -1,0 +1,31 @@
+name:          hview
+version:       0.0.0
+cabal-version: >= 1.8
+build-type:    Simple
+
+executable          hview
+    hs-source-dirs: .
+    main-is:        Main.hs
+    other-modules:
+      HViewWebSockets
+    extensions:     OverloadedStrings
+    build-depends:  base   >= 4      && < 5
+                  , scotty >= 0.20.1
+                  , stache >= 2.3.4
+                  , text >= 2.0.2
+                  , aeson >= 2.1.2.1
+                  , websockets >= 0.12.7.3
+                  , bytestring >= 0.11.5.3
+    ghc-options:    -Wall
+                    -Wcompat
+                    -Widentities
+                    -Wincomplete-record-updates
+                    -Wincomplete-uni-patterns
+                    -Wmissing-export-lists
+                    -Wmissing-home-modules
+                    -Wpartial-fields
+                    -Wredundant-constraints
+                    -O2
+                    -threaded
+                    -rtsopts
+                    -with-rtsopts=-N
