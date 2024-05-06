@@ -3,7 +3,7 @@
 
 module FloatExample (
     Instance2(..),
-    handleMessage,
+    foo,
     render
 ) where
 
@@ -87,22 +87,26 @@ render hid value = do
             ]
       return $ TL.unpack rendered  -- Convert Text back to String
 
-handleMessage :: WS.Connection -> Message -> IO ()
-handleMessage conn message = do
-    putStrLn $ "Handling message with ID: " ++ hID message
-    case targetID message of
-        Just targetID -> do
-            -- Extract the IO String output from the render function
-            html <- case dispatch message of
-                        "set-float" -> FloatExample.createBottomDiv "float"
-                        "unset-float" -> FloatExample.createBottomDiv "none"
-                        "" -> FloatExample.render "myid" "none"
-            -- Use the extracted String `html` in sendJsonMessage
-            sendJsonMessage conn (SendMessage { hId = targetID, html = html })
-        Nothing -> do 
-          -- In case of Nothing, send an empty string
-          putStrLn "do nothing"
-          --sendJsonMessage conn (SendMessage { hId = hID message, html = "" })
+foo :: Message -> IO String
+foo message =
+    case dispatch message of
+        "set-float" -> FloatExample.createBottomDiv "float"
+        "unset-float" -> FloatExample.createBottomDiv "none"
+        _ -> FloatExample.render "myid" "none"
+
+-- handleMessage :: WS.Connection -> Message -> (Message -> IO String) -> IO ()
+-- handleMessage conn message generateHTML = do
+--     putStrLn $ "Handling message with ID: " ++ hID message
+--     case targetID message of
+--         Just targetID -> do
+--             -- Extract the IO String output from the render function
+--             html <- generateHTML message
+--             -- Use the extracted String `html` in sendJsonMessage
+--             sendJsonMessage conn (SendMessage { hId = targetID, html = html })
+--         Nothing -> do 
+--           -- In case of Nothing, send an empty string
+--           putStrLn "do nothing"
+--           --sendJsonMessage conn (SendMessage { hId = hID message, html = "" })
 
 
 

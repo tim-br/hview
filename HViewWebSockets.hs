@@ -97,22 +97,36 @@ sendJsonMessage conn msg =
 
 -- type MessageHandler = WS.Connection -> String -> String -> Int -> IO ()
 
-type MessageHandler =  WS.Connection -> Message -> IO ()
+type MessageHandler =  WS.Connection -> Message -> (Message -> IO String) -> IO ()
 
-wsApp :: MessageHandler -> WS.ServerApp
-wsApp handleMessage pending_conn = do
-  conn <- WS.acceptRequest pending_conn
-  WS.forkPingThread conn 30  -- Keep the connection alive
-  forever $ do
-    msg <- WS.receiveData conn
-    --WS.sendTextData conn (msg :: Text)  -- Echo back the received message
-    case decode msg :: Maybe Message of
-      Just parsedMsg -> handleMessage conn parsedMsg
-      Nothing -> putStrLn "Error parsing JSON"
+wsApp :: MessageHandler -> (Message -> IO String) -> WS.ServerApp
+wsApp messageHandler generateHTML pending_conn = do
+    conn <- WS.acceptRequest pending_conn
+    WS.forkPingThread conn 30  -- Keep the connection alive
+    forever $ do
+        msg <- WS.receiveData conn
+        case decode msg of
+            Just parsedMsg -> messageHandler conn parsedMsg generateHTML
+            Nothing -> putStrLn "Error parsing JSON"
 
 -- Run the WebSocket server
-runWebSocketServer :: MessageHandler -> IO ()
-runWebSocketServer handleMsg = WS.runServer "127.0.0.1" 3001 (wsApp handleMsg)
+runWebSocketServer :: (Message -> IO String) -> IO ()
+runWebSocketServer generateHTML = WS.runServer "127.0.0.1" 3001 (wsApp handleMessage generateHTML)
+
+handleMessage :: WS.Connection -> Message -> (Message -> IO String) -> IO ()
+handleMessage conn message generateHTML = do
+    putStrLn $ "Handling message with ID: " ++ hID message
+    case targetID message of
+        Just targetID -> do
+            -- Extract the IO String output from the render function
+            html <- generateHTML message
+            -- Use the extracted String `html` in sendJsonMessage
+            sendJsonMessage conn (SendMessage { hId = targetID, html = html })
+        Nothing -> do 
+          -- In case of Nothing, send an empty string
+          putStrLn "do nothing"
+          --sendJsonMessage conn (SendMessage { hId = hID message, html = "" })
+
 
 -- {-# LANGUAGE DeriveGeneric, OverloadedStrings #-}
 
