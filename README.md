@@ -6,6 +6,16 @@ The HView library provides a WebSocket server implemented in Haskell using the `
 
 This project is currently in proto-alpha (προτο-α) phase.
 
+## Structure
+
+The main files in the project include:
+
+- **Main Haskell Server**: `Main.hs` contains the main logic for the Haskell WebSocket server.
+- **WebSocket Logic**: `HViewWebSockets.hs` handles WebSocket connections, message processing, and JSON serialization.
+- **JavaScript Client**: `static/js/hview.js` contains the JavaScript client code that connects to the WebSocket server and updates HTML elements.
+- **Mustache Templates**: Mustache templates for generating HTML are used in the Haskell server. They can be found in the Haskell code.
+
+
 ## Setup and Running
 
 ### Prerequisites
