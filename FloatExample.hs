@@ -3,7 +3,7 @@
 
 module FloatExample (
     Instance2(..),
-    foo,
+    dispatcher,
     render
 ) where
 
@@ -106,8 +106,8 @@ adjustCounter "increment" value = show (value + 1)
 adjustCounter "decrement" value = show (value - 1)
 adjustCounter _ value = show (value)
 
-foo :: Message -> IO String
-foo message =
+dispatcher :: Message -> IO String
+dispatcher message =
     case dispatch message of
         "set-float" -> FloatExample.createBottomDiv "float"
         "unset-float" -> FloatExample.createBottomDiv "none"
