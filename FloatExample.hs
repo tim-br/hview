@@ -26,6 +26,44 @@ data Instance2 = Instance2 {
 
 instance ToJSON Instance2
 
+-- Define a data structure for your items
+data Item = Item { name :: String, price :: Double } deriving (Show)
+
+-- Sample data
+items :: [Item]
+items = [
+    Item { name = "Apple", price = 1.99 },
+    Item { name = "Banana", price = 0.99 },
+    Item { name = "Orange", price = 2.49 }
+  ]
+
+-- Function to generate list item
+generateListItem :: Item -> IO String
+generateListItem Item {name = name, price = price} = do
+  let templateStr = "{{name}} - {{price}}"
+  let compiledTemplate = compileMustacheText "mainDiv" templateStr
+  case compiledTemplate of
+    Left _ -> return "Error compiling main div template"
+    Right template -> do
+      let rendered = renderMustache template $ object ["name" .= name, "price" .= price]
+      return $ TL.unpack rendered
+
+createList :: String -> [Item] -> IO String
+createList hid items = do
+  let templateStr = "<h1>Items</h1>\n" ++
+                    "<ul h-id={{hid}}>\n" ++
+                    "{{#items}}\n" ++
+                    "<li>{{{.}}}</li>\n" ++
+                    "{{/items}}\n" ++
+                    "</ul>\n"      
+      compiledTemplate = compileMustacheText "mainDiv" (T.pack templateStr)
+  case compiledTemplate of
+    Left _ -> return "Error compiling main div template"
+    Right template -> do
+      itemStrings <- mapM generateListItem items
+      let rendered = renderMustache template $ object ["items" .= itemStrings, "hid" .= hid]
+      return $ TL.unpack rendered
+
 createMainDiv :: String -> String -> IO String
 createMainDiv value id = do
   let templateStr = "<div h-id={{id}} target-id=\"bottomDiv\">{{{content}}}</div>"
@@ -41,7 +79,7 @@ createMainDiv value id = do
 
 counterDiv :: String -> String -> IO String
 counterDiv hId value = do
-  let templateStr = "<div h-id={{id}}><h1>Counter: <div h-value>{{count}}</div></h1><button h-click=\"increment\">Increment</button><button h-click=\"decrement\">Decrement</button></div>"
+  let templateStr = "<div h-id={{id}} target-id={{id}}><h1>Counter: <div h-value>{{count}}</div></h1><button h-click=\"increment\">Increment</button><button h-click=\"decrement\">Decrement</button></div>"
       compiledTemplate = compileMustacheText "mainDiv" templateStr
   case compiledTemplate of
     Left _ -> return "Error compiling main div template"
@@ -50,7 +88,7 @@ counterDiv hId value = do
             [ "id"    .= hId
             , "count" .= TL.pack value  -- Convert String to Text
             ]
-      return $ TL.unpack rendered 
+      return $ TL.unpack rendered
 
 -- Function to create the bottom div using Mustache
 createBottomDiv :: String -> IO String
@@ -83,14 +121,15 @@ render hid value = do
   let unsetButtonStr = "<button h-click=\"unset-float\">Hide Float</button>"
   let newValue = buttonStr ++ unsetButtonStr
   mainDivContent <- createMainDiv newValue hid
+  list <- createList "list" items
   bottomDivContent <- createBottomDiv value
   counterDiv <- counterDiv "fixx" "0"
-  let templateStr = "{{{mainDiv}}}{{{counterDiv}}}{{{bottomDiv}}}"
-      buttonStr = "<button h-click=\"set-float\">Show Float</button>"
-      unsetButtonStr = "<button h-click=\"unset-float\">Hide Float</button>"
+  let templateStr = "{{{mainDiv}}}{{{counterDiv}}} {{{list}}} {{{bottomDiv}}}"
+      -- buttonStr = "<button h-click=\"set-float\">Show Float</button>"
+      -- unsetButtonStr = "<button h-click=\"unset-float\">Hide Float</button>"
       compiledTemplate = compileMustacheText "page" templateStr
   case compiledTemplate of
-    Left bundle -> return "Error compiling page template"
+    Left _ -> return "Error compiling page template"
     Right template -> do
       let rendered = renderMustache template $ object
             [ "mainDiv"   .= T.pack mainDivContent  -- Convert String to Text
@@ -98,6 +137,7 @@ render hid value = do
             , "unsetButton"    .= T.pack unsetButtonStr  -- Convert String to Text
             , "counterDiv" .= T.pack counterDiv
             , "bottomDiv" .= T.pack bottomDivContent  -- Convert String to Text
+            , "list" .= T.pack list
             ]
       return $ TL.unpack rendered  -- Convert Text back to String
 
@@ -114,33 +154,3 @@ dispatcher message =
         "increment" -> counterDiv "fixx" $ show ((read (payload message) :: Int) + 1)
         "decrement" -> counterDiv "fixx" $ show ((read (payload message) :: Int) - 1)
         _ -> FloatExample.render "myid" "none"
-
--- handleMessage :: WS.Connection -> Message -> (Message -> IO String) -> IO ()
--- handleMessage conn message generateHTML = do
---     putStrLn $ "Handling message with ID: " ++ hID message
---     case targetID message of
---         Just targetID -> do
---             -- Extract the IO String output from the render function
---             html <- generateHTML message
---             -- Use the extracted String `html` in sendJsonMessage
---             sendJsonMessage conn (SendMessage { hId = targetID, html = html })
---         Nothing -> do 
---           -- In case of Nothing, send an empty string
---           putStrLn "do nothing"
---           --sendJsonMessage conn (SendMessage { hId = hID message, html = "" })
-
-
-
--- handleMessage :: WS.Connection -> Message -> IO ()
--- handleMessage conn (Message hId body) = do
---     putStrLn $ "Handling message with ID: " ++ hId
---     case decode body :: Maybe Instance2 of
---         Just (Instance2 val) -> do
---             let html = case val of
---                             "inc" -> render hId (Instance2 (val + 2))
---                             "dec" -> render hId (Instance2 (val - 2))
---                             _     -> render hId (Instance2 val)
---             sendJsonMessage conn (SendMessage { hId = hId, html = TL.unpack html })
---         Nothing -> putStrLn "Error parsing JSON"
-
-

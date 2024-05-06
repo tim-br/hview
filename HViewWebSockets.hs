@@ -56,7 +56,7 @@ class Renderer a where
 
 data Message = Message {
     hID :: String,
-    targetID :: Maybe String,
+    targetID :: String,
     dispatch :: String,
     payload :: String
 } deriving (Show, Generic)
@@ -117,17 +117,10 @@ runWebSocketServer generateHTML = WS.runServer "127.0.0.1" 3001 (wsApp handleMes
 handleMessage :: WS.Connection -> Message -> (Message -> IO String) -> IO ()
 handleMessage conn message generateHTML = do
     putStrLn $ "Handling message with ID: " ++ hID message
-    case targetID message of
-        Just targetID -> do
             -- Extract the IO String output from the render function
-            html <- generateHTML message
-            -- Use the extracted String `html` in sendJsonMessage
-            sendJsonMessage conn (SendMessage { hId = targetID, html = html })
-        Nothing -> do 
-          -- In case of Nothing, send an empty string
-          html <- generateHTML message
-          sendJsonMessage conn (SendMessage { hId = hID message, html = html })
-
+    html <- generateHTML message
+    -- Use the extracted String `html` in sendJsonMessage
+    sendJsonMessage conn (SendMessage { hId = targetID message, html = html })
           --sendJsonMessage conn (SendMessage { hId = hID message, html = "" })
 
 
