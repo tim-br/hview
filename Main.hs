@@ -9,7 +9,7 @@ import Text.Mustache
 import Text.Mustache.Compile
 import HViewWebSockets (runWebSocketServer)
 -- import HViewInstance (Counter(..), handleMessage)
-import FloatExample (Instance2(..), foo, render)
+import FloatExample (Instance2(..), dispatcher, render)
 --import HViewInstance2 (Instance2(..), handleMessage)
 import Data.Aeson ((.=), object)
 import Control.Concurrent (forkIO)
@@ -70,5 +70,5 @@ scottyServer = scotty 3000 $ do
 
 main :: IO ()
 main = do
-  _ <- forkIO $ runWebSocketServer foo
+  _ <- forkIO $ runWebSocketServer dispatcher
   scottyServer
