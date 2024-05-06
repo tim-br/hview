@@ -6,21 +6,22 @@ import Data.Text.Lazy as TL
 
 import Text.Mustache
 import Text.Mustache.Compile
-import HViewWebSockets (runWebSocketServer, buttonT)
+import HViewWebSockets (runWebSocketServer, buttonT, render)
+import HViewInstance (Counter(..), handleMessage)
 import Data.Aeson ((.=), object)
 import Control.Concurrent (forkIO)
 
 mainPage :: String -> TL.Text
 mainPage name = do
-  let button = buttonT "myid" 0
-  let button32 = buttonT "myid-32" 32
-  let compiledTemplate = compileMustacheText "page" "<html><head><script src='/js/hview.js'></script></head><body><div>Hello, {{name}}!</div> {{{button}}} {{{button32}}} </body></html>"
+  let counter1 = render $ Counter "myid" 0
+  let counter2 = render $ Counter "myid-32" 32
+  let compiledTemplate = compileMustacheText "page" "<html><head><script src='/js/hview.js'></script></head><body><div>Hello, {{name}}!</div> {{{counter1}}} {{{counter2}}} </body></html>"
   case compiledTemplate of
     Left bundle ->  "error"
     Right template -> renderMustache template $ object
       [ "name"   .= (name :: String)
-      , "button" .= button  -- pass the result of buttonTemplate as a variable
-      , "button32" .= button32  ]
+      , "counter1" .= counter1  -- pass the result of buttonTemplate as a variable
+      , "counter2" .= counter2  ]
 
 scottyServer = scotty 3000 $ do
 
@@ -38,5 +39,5 @@ scottyServer = scotty 3000 $ do
 
 main :: IO ()
 main = do
-  _ <- forkIO runWebSocketServer
+  _ <- forkIO $ runWebSocketServer handleMessage
   scottyServer
