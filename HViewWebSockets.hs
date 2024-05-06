@@ -9,7 +9,6 @@ module HViewWebSockets (
     sendJsonMessage,
     SendMessage(..),
     Message(..),
-    Body(..)
 ) where
 
 import qualified Network.WebSockets as WS
@@ -50,17 +49,17 @@ class Renderer a where
 -- buttonT :: TL.Text -> TL.Text
 -- buttonT customHTML = customHTML
 
-data Body = Body {
-    dispatch :: String,
-    payload :: Int
-} deriving (Show, Generic)
+-- data Body = Body {
+--     dispatch :: String,
+--     payload :: Int
+-- } deriving (Show, Generic)
 
 data Message = Message {
     hID :: String,
-    body :: Body
+    targetID :: Maybe String,
+    dispatch :: String
 } deriving (Show, Generic)
 
-instance FromJSON Body
 instance FromJSON Message
 
 data SendMessage = SendMessage

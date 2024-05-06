@@ -30,7 +30,7 @@ import Control.Concurrent (forkIO)
 -- Using Instance2 from HViewInstanc2
 mainPage :: String -> TL.Text
 mainPage name = do
-  let counter1 = render "myid" (Instance2 "")
+  let counter1 = render "myid" (Instance2 "float")
   -- let counter2 = render "myid-32" $ Instance2 32
   -- let counter1 = render "myid" $ Counter 0
   -- let counter2 = render "myid-32" $ Counter 32

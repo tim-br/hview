@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric, OverloadedStrings #-}
+{-# LANGUAGE BlockArguments #-}
 
 module FloatExample (
     Instance2(..),
@@ -6,8 +7,8 @@ module FloatExample (
 ) where
 
 import qualified Network.WebSockets as WS
-import HViewWebSockets (Renderer(..), SendMessage(..), sendJsonMessage, Message(..), Body(..))
-import Text.Mustache
+import HViewWebSockets (Renderer(..), SendMessage(..), sendJsonMessage, Message(..))
+import Text.Mustache ( compileMustacheText, renderMustache )
 import Text.Mustache.Compile
 import GHC.Generics (Generic)
 import Data.Aeson (ToJSON, toJSON, (.=), object, encode, decode)
@@ -24,7 +25,7 @@ instance ToJSON Instance2
 
 instance Renderer Instance2 where
     render hid (Instance2 value ) = do
-      let templateStr = "<div h-id={{id}}><div h-value>{{value}}</div> <button h-click=\"set-float\">Show Float</button><div class=\"float\"></div></div>"
+      let templateStr = "<div h-id={{id}} target-id=\"bottomDiv\"><div h-value>{{value}}</div> <button h-click=\"set-float\">Show Float</button><div h-id\"bottomDiv\" class=\"{{value}}\"></div></div>"
       let compiledTemplate = compileMustacheText "page" templateStr
       case compiledTemplate of
         Left bundle ->  "Error compiling template"
@@ -35,11 +36,15 @@ instance Renderer Instance2 where
 handleMessage :: WS.Connection -> Message -> IO ()
 handleMessage conn message = do
     putStrLn $ "Handling message with ID: " ++ hID message
-    case body message of
-        Body dispatch payload -> do
-            let html = case dispatch of
-                            "set-float" -> render (hID message) (Instance2 "")
+    case targetID message of
+        Just targetID -> do
+            let html = case dispatch message of
+                            "set-float" -> render targetID (Instance2 "none")
+                            "" -> render targetID (Instance2 "none")
             sendJsonMessage conn (SendMessage { hId = hID message, html = TL.unpack html })
+        Nothing -> do 
+          sendJsonMessage conn (SendMessage { hId = hID message, html = TL.unpack "" })
+
 
 
 -- handleMessage :: WS.Connection -> Message -> IO ()
