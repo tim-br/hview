@@ -38,7 +38,7 @@ mainPage name = do
   -- counter2 <- render "myid-32" $ Instance2 32
   
   -- Compile the template
-  let compiledTemplate = compileMustacheText "page" "<html><head><link rel=\"stylesheet\" href=\"/css/styles.css\"><script src='/js/hview.js'></script></head><body><div>Test, {{name}}!</div> {{{counter1}}}  </body></html>"
+  let compiledTemplate = compileMustacheText "page" "<html><head><link rel=\"stylesheet\" href=\"/css/tailwind.css\"><script src='/js/hview.js'></script></head><body><div>{{{counter1}}}</body></html>"
   case compiledTemplate of
     Left bundle -> return "error"
     Right template -> do
@@ -63,10 +63,15 @@ scottyServer = scotty 3000 $ do
     setHeader "Content-Type" "application/javascript"
     file $ "static/js/" ++ jsFile
 
+  -- get "/css/:file" $ do
+  --   cssFile <- captureParam "file"
+  --   setHeader "Content-Type" "application/css"
+  --   file $ "static/css/" ++ cssFile
+
   get "/css/:file" $ do
     cssFile <- captureParam "file"
     setHeader "Content-Type" "application/css"
-    file $ "static/css/" ++ cssFile
+    file $ "tailwind/static/css/" ++ cssFile
 
 main :: IO ()
 main = do

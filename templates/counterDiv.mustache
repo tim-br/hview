@@ -1,1 +1,5 @@
-<div h-id={{id}} target-id={{id}}><h1>Counter: <div h-value>{{count}}</div></h1><button h-click="increment">Increment</button><button h-click="decrement">Decrement</button></div>
+<div h-id={{id}} target-id={{id}} class="bg-white shadow-lg rounded-lg p-6 m-4">
+  <h1 class="text-2xl font-bold mb-4">Counter: <div h-value class="inline-block">{{count}}</div></h1>
+  <button h-click="increment" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Increment</button>
+  <button h-click="decrement" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded ml-2">Decrement</button>
+</div>
