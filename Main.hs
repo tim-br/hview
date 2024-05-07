@@ -32,7 +32,7 @@ import Control.Concurrent (forkIO)
 mainPage :: String -> IO TL.Text
 mainPage name = do
   -- Execute the render function to get the actual String value from the IO action
-  counter1 <- render "myid" "float"
+  counter1 <- render "myid" "none"
   
   -- You might need to handle more instances similar to the commented out counter2 here
   -- counter2 <- render "myid-32" $ Instance2 32
