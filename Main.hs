@@ -70,5 +70,6 @@ scottyServer = scotty 3000 $ do
 
 main :: IO ()
 main = do
-  _ <- forkIO $ runWebSocketServer dispatcher
+
+  _ <- forkIO $ runWebSocketServer dispatcher (0 :: Int)
   scottyServer

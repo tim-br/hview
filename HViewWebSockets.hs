@@ -99,13 +99,13 @@ sendJsonMessage conn msg =
 
 -- type MessageHandler = WS.Connection -> String -> String -> Int -> IO ()
 
-type MessageHandler =  WS.Connection -> Message -> (Message -> MVar Int -> IO String) -> MVar Int -> IO ()
+type MessageHandler a =  WS.Connection -> Message -> (Message -> MVar a -> IO String) -> MVar a -> IO ()
 
-wsApp :: MessageHandler -> (Message -> MVar Int -> IO String) -> WS.ServerApp
-wsApp messageHandler generateHTML pending_conn = do
+wsApp :: MessageHandler a -> (Message -> MVar a -> IO String) -> a -> WS.ServerApp
+wsApp messageHandler generateHTML initialValue pending_conn = do
     conn <- WS.acceptRequest pending_conn
     WS.forkPingThread conn 30  -- Keep the connection alive
-    globalState <- newMVar 0
+    globalState <- newMVar initialValue
     forever $ do
         msg <- WS.receiveData conn
         case decode msg of
@@ -113,11 +113,11 @@ wsApp messageHandler generateHTML pending_conn = do
             Nothing -> putStrLn "Error parsing JSON"
 
 -- Run the WebSocket server
-runWebSocketServer :: (Message -> MVar Int -> IO String) -> IO ()
-runWebSocketServer generateHTML = do
-  WS.runServer "127.0.0.1" 3001 (wsApp handleMessage generateHTML)
+runWebSocketServer :: (Message -> MVar a -> IO String) -> a -> IO ()
+runWebSocketServer generateHTML initialValue = do
+  WS.runServer "127.0.0.1" 3001 (wsApp handleMessage generateHTML initialValue)
 
-handleMessage :: WS.Connection -> Message -> (Message -> MVar Int -> IO String) -> MVar Int -> IO ()
+handleMessage :: WS.Connection -> Message -> (Message -> MVar a -> IO String) -> MVar a -> IO ()
 handleMessage conn message generateHTML globalState = do
     putStrLn $ "Handling message with ID: " ++ hID message
             -- Extract the IO String output from the render function
