@@ -7,6 +7,7 @@ module FloatExample (
     render
 ) where
 
+import Control.Concurrent.MVar
 import qualified Network.WebSockets as WS
 import HViewWebSockets (SendMessage(..), sendJsonMessage, Message(..))
 import Text.Mustache ( compileMustacheText, renderMustache )
@@ -55,7 +56,7 @@ createList hid items = do
                     "{{#items}}\n" ++
                     "<li>{{{.}}}</li>\n" ++
                     "{{/items}}\n" ++
-                    "</ul>\n"      
+                    "</ul>\n"
       compiledTemplate = compileMustacheText "mainDiv" (T.pack templateStr)
   case compiledTemplate of
     Left _ -> return "Error compiling main div template"
@@ -146,12 +147,18 @@ adjustCounter "increment" value = show (value + 1)
 adjustCounter "decrement" value = show (value - 1)
 adjustCounter _ value = show (value)
 
-handleDispatch :: String -> String -> IO String
-handleDispatch "set-float" _ = FloatExample.createBottomDiv "float"
-handleDispatch "unset-float" _ = FloatExample.createBottomDiv "none"
-handleDispatch "increment" payload = counterDiv "fixx" $ show ((read payload :: Int) + 1)
-handleDispatch "decrement" payload = counterDiv "fixx" $ show ((read payload :: Int) - 1)
-handleDispatch _ _ = FloatExample.render "myid" "none"
+handleDispatch :: String -> String -> MVar Int -> IO String
+handleDispatch "set-float" _ _ = FloatExample.createBottomDiv "float"
+handleDispatch "unset-float" _ _ = FloatExample.createBottomDiv "none"
+handleDispatch "increment" _ globalState = do
+  modifyMVar_ globalState $ \value -> return (value + 1)
+  newValue <- readMVar globalState
+  counterDiv "fixx" $ show newValue
+handleDispatch "decrement" _ globalState = do
+  modifyMVar_ globalState $ \value -> return (value - 1)
+  newValue <- readMVar globalState
+  counterDiv "fixx" $ show newValue
+handleDispatch _ _ _ = FloatExample.render "myid" "none"
 
-dispatcher :: Message -> IO String
+dispatcher :: Message -> MVar Int -> IO String
 dispatcher message = handleDispatch (dispatch message) (payload message)
