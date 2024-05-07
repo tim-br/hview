@@ -146,11 +146,12 @@ adjustCounter "increment" value = show (value + 1)
 adjustCounter "decrement" value = show (value - 1)
 adjustCounter _ value = show (value)
 
+handleDispatch :: String -> String -> IO String
+handleDispatch "set-float" _ = FloatExample.createBottomDiv "float"
+handleDispatch "unset-float" _ = FloatExample.createBottomDiv "none"
+handleDispatch "increment" payload = counterDiv "fixx" $ show ((read payload :: Int) + 1)
+handleDispatch "decrement" payload = counterDiv "fixx" $ show ((read payload :: Int) - 1)
+handleDispatch _ _ = FloatExample.render "myid" "none"
+
 dispatcher :: Message -> IO String
-dispatcher message =
-    case dispatch message of
-        "set-float" -> FloatExample.createBottomDiv "float"
-        "unset-float" -> FloatExample.createBottomDiv "none"
-        "increment" -> counterDiv "fixx" $ show ((read (payload message) :: Int) + 1)
-        "decrement" -> counterDiv "fixx" $ show ((read (payload message) :: Int) - 1)
-        _ -> FloatExample.render "myid" "none"
+dispatcher message = handleDispatch (dispatch message) (payload message)
