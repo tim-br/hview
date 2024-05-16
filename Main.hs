@@ -9,7 +9,7 @@ import Text.Mustache
 import Text.Mustache.Compile
 import HViewWebSockets (runWebSocketServer)
 -- import HViewInstance (Counter(..), handleMessage)
-import FloatExample (Instance2(..), dispatcher, render)
+import ToastExample (Instance2(..), dispatcher, render)
 --import HViewInstance2 (Instance2(..), handleMessage)
 import Data.Aeson ((.=), object)
 import Control.Concurrent (forkIO)
@@ -32,20 +32,20 @@ import Control.Concurrent (forkIO)
 mainPage :: String -> IO TL.Text
 mainPage name = do
   -- Execute the render function to get the actual String value from the IO action
-  counter1 <- render "myid" "none"
+  toastExample <- render "myid" "none"
   
   -- You might need to handle more instances similar to the commented out counter2 here
   -- counter2 <- render "myid-32" $ Instance2 32
   
   -- Compile the template
-  let compiledTemplate = compileMustacheText "page" "<html><head><link rel=\"stylesheet\" href=\"/css/tailwind.css\"><script src='/js/hview.js'></script></head><body><div>{{{counter1}}}</body></html>"
+  let compiledTemplate = compileMustacheText "page" "<html><head><link rel=\"stylesheet\" href=\"/css/tailwind.css\"><script src='/js/hview.js'></script></head><body><div>{{{toastExample}}}</body></html>"
   case compiledTemplate of
     Left bundle -> return "error"
     Right template -> do
       -- Now use counter1 as a String in the JSON object
       let renderedPage = renderMustache template $ object
             [ "name" .= name
-            , "counter1" .= counter1
+            , "toastExample" .= toastExample
             ]
       return renderedPage
 

@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveGeneric, OverloadedStrings #-}
 {-# LANGUAGE BlockArguments #-}
 
-module FloatExample (
+module ToastExample (
     Instance2(..),
     dispatcher,
     render
@@ -82,25 +82,18 @@ createBottomDiv valueClass = do
         ]
   return $ TL.unpack rendered  -- Convert Text back to String
 
-
-render :: String -> String -> IO String
+render :: String -> String -> IO String 
 render hid value = do
-  mainDivContent <- createMainDiv hid
-  list <- createList "list" items
-  bottomDivContent <- createBottomDiv value
-  counterDiv <- counterDiv "fixx" "0"
-  let templateStr = "{{{mainDiv}}}{{{counterDiv}}} {{{list}}} {{{bottomDiv}}}"
-      compiledTemplate = compileMustacheText "page" templateStr
-  case compiledTemplate of
-    Left _ -> return "Error compiling page template"
-    Right template -> do
-      let rendered = renderMustache template $ object
-            [ "mainDiv"   .= T.pack mainDivContent  -- Convert String to Text
-            , "counterDiv" .= T.pack counterDiv
-            , "bottomDiv" .= T.pack bottomDivContent  -- Convert String to Text
-            , "list" .= T.pack list
-            ]
-      return $ TL.unpack rendered  -- Convert Text back to String
+  template <- compileMustacheFile "templates/toastExample.mustache"
+  itemStrings <- mapM generateListItem items
+  let rendered = renderMustache template $ object
+        [ "valueClass"      .= value,
+          "id" .= hid,
+          "count" .= TL.pack "0",
+          "items" .= itemStrings,
+          "counter-id" .= TL.pack "counter-id"
+        ]
+  return $ TL.unpack rendered
 
 adjustCounter :: String -> Int -> String
 adjustCounter "increment" value = show (value + 1)
@@ -108,8 +101,8 @@ adjustCounter "decrement" value = show (value - 1)
 adjustCounter _ value = show (value)
 
 handleDispatch :: (Num a, Show a) => String -> String -> MVar a -> IO String
-handleDispatch "set-float" _ _ = FloatExample.createBottomDiv "float"
-handleDispatch "unset-float" _ _ = FloatExample.createBottomDiv "none"
+handleDispatch "set-float" _ _ = ToastExample.createBottomDiv "float"
+handleDispatch "unset-float" _ _ = ToastExample.createBottomDiv "none"
 handleDispatch "increment" _ globalState = do
   modifyMVar_ globalState $ \value -> return (value + 1)
   newValue <- readMVar globalState
@@ -118,7 +111,7 @@ handleDispatch "decrement" _ globalState = do
   modifyMVar_ globalState $ \value -> return (value - 1)
   newValue <- readMVar globalState
   counterDiv "fixx" $ show newValue
-handleDispatch _ _ _ = FloatExample.render "myid" "none"
+handleDispatch _ _ _ = ToastExample.render "myid" "none"
 
 dispatcher :: (Num a, Show a) => Message -> MVar a -> IO String
 dispatcher message = handleDispatch (dispatch message) (payload message)
