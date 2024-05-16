@@ -9,7 +9,7 @@ import Text.Mustache
 import Text.Mustache.Compile
 import HViewWebSockets (runWebSocketServer)
 -- import HViewInstance (Counter(..), handleMessage)
-import ToastExample (Instance2(..), dispatcher, render)
+import ToastExample (Instance2(..), dispatcher, render, mount)
 --import HViewInstance2 (Instance2(..), handleMessage)
 import Data.Aeson ((.=), object)
 import Control.Concurrent (forkIO)
@@ -32,8 +32,8 @@ import Control.Concurrent (forkIO)
 mainPage :: String -> IO TL.Text
 mainPage name = do
   -- Execute the render function to get the actual String value from the IO action
-  toastExample <- render "myid" "none"
-  
+  let globalState = mount  
+  toastExample <- render globalState
   -- You might need to handle more instances similar to the commented out counter2 here
   -- counter2 <- render "myid-32" $ Instance2 32
   
@@ -75,6 +75,6 @@ scottyServer = scotty 3000 $ do
 
 main :: IO ()
 main = do
-
-  _ <- forkIO $ runWebSocketServer dispatcher (0 :: Int)
+  let globalState = mount
+  _ <- forkIO $ runWebSocketServer dispatcher globalState
   scottyServer

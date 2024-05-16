@@ -4,12 +4,13 @@
 module ToastExample (
     Instance2(..),
     dispatcher,
-    render
+    render,
+    mount
 ) where
 
 import Control.Concurrent.MVar
 import qualified Network.WebSockets as WS
-import HViewWebSockets (SendMessage(..), sendJsonMessage, Message(..))
+import HViewWebSockets (SendMessage(..), sendJsonMessage, Message(..), Renderer(..))
 import Text.Mustache ( compileMustacheText, renderMustache, compileMustacheFile )
 import Text.Mustache.Compile
 import GHC.Generics (Generic)
@@ -22,7 +23,8 @@ import qualified Data.Text.Lazy.Encoding as TLE
 
 data Instance2 = Instance2 {
     --hId :: String,
-    value :: String
+    value :: Int,
+    floatClass :: String
 } deriving (Show, Generic)
 
 instance ToJSON Instance2
@@ -75,43 +77,69 @@ counterDiv hId value = do
 
 -- Function to create the bottom div using Mustache
 createBottomDiv :: String -> IO String
-createBottomDiv valueClass = do
+createBottomDiv floatClass = do
   template <- compileMustacheFile "templates/bottomDiv.mustache"
   let rendered = renderMustache template $ object
-        [ "valueClass"      .= valueClass
+        [ "floatClass" .= floatClass
         ]
   return $ TL.unpack rendered  -- Convert Text back to String
 
-render :: String -> String -> IO String 
-render hid value = do
-  template <- compileMustacheFile "templates/toastExample.mustache"
-  itemStrings <- mapM generateListItem items
-  let rendered = renderMustache template $ object
-        [ "valueClass"      .= value,
-          "id" .= hid,
-          "count" .= TL.pack "0",
-          "items" .= itemStrings,
-          "counter-id" .= TL.pack "counter-id"
-        ]
-  return $ TL.unpack rendered
+-- render :: Instance2 -> IO String 
+-- render instance2 = do
+--   template <- compileMustacheFile "templates/toastExample.mustache"
+--   itemStrings <- mapM generateListItem items
+--   let rendered = renderMustache template $ object
+--         [ "floatClass" .= TL.pack (floatClass instance2),
+--           "id" .= TL.pack "hid",
+--           "count" .= (TL.pack $ show (value instance2)),
+--           "items" .= itemStrings,
+--           "counter-id" .= TL.pack "counter-id"
+--         ]
+--   return $ TL.unpack rendered
+
+
+instance Renderer Instance2 where
+    render instance2 = do
+        template <- compileMustacheFile "templates/toastExample.mustache"
+        itemStrings <- mapM generateListItem items -- You need to define generateListItem
+        let rendered = renderMustache template $ object
+              [ "floatClass" .= TL.pack (floatClass instance2),
+                "id" .= TL.pack "hid",
+                "count" .= TL.pack (show (value instance2)),
+                "items" .= itemStrings,
+                "counter-id" .= TL.pack "fixx"
+              ]
+        return rendered
+
+mount :: Instance2
+mount = Instance2 {
+    value = 0,
+    floatClass = "none"
+}
+
 
 adjustCounter :: String -> Int -> String
 adjustCounter "increment" value = show (value + 1)
 adjustCounter "decrement" value = show (value - 1)
 adjustCounter _ value = show (value)
 
-handleDispatch :: (Num a, Show a) => String -> String -> MVar a -> IO String
+handleDispatch :: String -> String -> MVar Instance2 -> IO String
 handleDispatch "set-float" _ _ = ToastExample.createBottomDiv "float"
 handleDispatch "unset-float" _ _ = ToastExample.createBottomDiv "none"
 handleDispatch "increment" _ globalState = do
-  modifyMVar_ globalState $ \value -> return (value + 1)
+  modifyMVar_ globalState $ \currentState -> 
+    return currentState { value = value currentState + 1 }
   newValue <- readMVar globalState
-  counterDiv "fixx" $ show newValue
+  counterDiv "fixx" $ show (value newValue)
 handleDispatch "decrement" _ globalState = do
-  modifyMVar_ globalState $ \value -> return (value - 1)
+  modifyMVar_ globalState $ \currentState ->
+    return currentState { value = value currentState - 1 }
   newValue <- readMVar globalState
-  counterDiv "fixx" $ show newValue
-handleDispatch _ _ _ = ToastExample.render "myid" "none"
+  counterDiv "fixx" $ show (value newValue)
+handleDispatch _ _ globalState = do 
+  newValue <- readMVar globalState
+  renderedText <- render newValue  -- Correctly binds the IO TL.Text to renderedText
+  return $ TL.unpack renderedText  -- Correctly unpacks TL.Text to String within the IO monad
 
-dispatcher :: (Num a, Show a) => Message -> MVar a -> IO String
+dispatcher :: Message -> MVar Instance2 -> IO String
 dispatcher message = handleDispatch (dispatch message) (payload message)

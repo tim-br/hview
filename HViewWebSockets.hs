@@ -28,8 +28,8 @@ import Data.Aeson ((.:))
 
 -- Define a typeclass for rendering
 class Renderer a where
-    render :: String -> a -> TL.Text
-
+    render :: a -> IO TL.Text
+    
 -- Define a type for template data
 -- data TemplateData = TemplateData {
 --     id :: String,
